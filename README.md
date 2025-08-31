@@ -4,13 +4,8 @@ A zero-dependency (vanilla JS) dual-list box with grouping, search, select-all, 
 
 ## Installation
 
-- As part of this repo (local): the package resides under `resources/js/dual-listbox`.
-- As an NPM package: publish this folder or npm link.
-
 ```bash
-# inside resources/js/dual-listbox
-npm install
-npm run build
+npm install @elrayes/dual-listbox
 ```
 
 
