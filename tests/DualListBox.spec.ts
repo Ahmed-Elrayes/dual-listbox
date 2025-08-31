@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { DualListBox } from '../dist/index.mjs';
+import { DualListBox } from '../dist/index.cjs';
 
 function createContainer() {
   const div = document.createElement('div');
