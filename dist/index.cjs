@@ -1,3 +1,5 @@
+'use strict';
+
 // src/lib/themePresets.ts
 var defaultTheme = {
   container: "dual-listbox",
@@ -425,6 +427,11 @@ function initDualListBox(selector, options = {}) {
 }
 DualListBox.setTheme = (theme) => useTheme(theme);
 
-export { DualListBox, bootstrapTheme, defaultTheme, initDualListBox, tailwindTheme, useTheme };
-//# sourceMappingURL=index.mjs.map
-//# sourceMappingURL=index.mjs.map
+exports.DualListBox = DualListBox;
+exports.bootstrapTheme = bootstrapTheme;
+exports.defaultTheme = defaultTheme;
+exports.initDualListBox = initDualListBox;
+exports.tailwindTheme = tailwindTheme;
+exports.useTheme = useTheme;
+//# sourceMappingURL=index.cjs.map
+//# sourceMappingURL=index.cjs.map

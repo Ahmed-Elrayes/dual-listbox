@@ -1,50 +1,50 @@
 {
-  "name": "@elrayes/dual-listbox",
-  "version": "0.2.0",
-  "type": "module",
-  "description": "A zero-dependency (vanilla JS) dual list box with grouping, search, select-all, theming (Bootstrap/Tailwind), and TypeScript types.",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
-  "exports": {
-    ".": {
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+    "name": "@elrayes/dual-listbox",
+    "version": "0.2.0",
+    "type": "module",
+    "description": "A zero-dependency (vanilla JS) dual list box with grouping, search, select-all, theming (Bootstrap/Tailwind), and TypeScript types.",
+    "main": "dist/index.js",
+    "module": "dist/index.mjs",
+    "types": "dist/index.d.ts",
+    "exports": {
+        ".": {
+            "import": "./dist/index.mjs",
+            "require": "./dist/index.js"
+        },
+        "./styles/*": "./styles/*",
+        "./themes/*": "./themes/*"
     },
-    "./styles/*": "./styles/*",
-    "./themes/*": "./themes/*"
-  },
-  "sideEffects": [
-    "styles/*",
-    "themes/*"
-  ],
-  "files": [
-    "dist",
-    "styles",
-    "themes",
-    "README.md",
-    "LICENSE",
-    "docs"
-  ],
-  "scripts": {
-    "build": "tsup",
-    "clean": "rimraf dist",
-    "dev": "tsup --watch",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "coverage": "vitest run --coverage"
-  },
-  "devDependencies": {
-    "tsup": "^8.2.4",
-    "typescript": "^5.5.4",
-    "rimraf": "^5.0.5",
-    "vitest": "^2.0.5",
-    "@vitest/coverage-v8": "^2.0.5",
-    "jsdom": "^24.1.0"
-  },
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com:Ahmed-Elrayes/dual-listbox.git"
-  }
+    "sideEffects": [
+        "styles/*",
+        "themes/*"
+    ],
+    "files": [
+        "dist",
+        "styles",
+        "themes",
+        "README.md",
+        "LICENSE",
+        "docs"
+    ],
+    "scripts": {
+        "build": "tsup src/index.ts --format cjs,esm --dts",
+        "clean": "rimraf dist",
+        "dev": "tsup --watch",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "coverage": "vitest run --coverage"
+    },
+    "devDependencies": {
+        "tsup": "^8.2.4",
+        "typescript": "^5.5.4",
+        "rimraf": "^5.0.5",
+        "vitest": "^2.0.5",
+        "@vitest/coverage-v8": "^2.0.5",
+        "jsdom": "^24.1.0"
+    },
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com:Ahmed-Elrayes/dual-listbox.git"
+    }
 }
