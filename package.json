@@ -1,0 +1,43 @@
+{
+  "name": "@elrayes/dual-listbox",
+  "version": "0.1.0",
+  "description": "A zero-dependency (vanilla JS) dual list box with grouping, search, select-all, theming (Bootstrap/Tailwind), and TypeScript types.",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./styles/*": "./styles/*",
+    "./themes/*": "./themes/*"
+  },
+  "sideEffects": [
+    "styles/*",
+    "themes/*"
+  ],
+  "files": [
+    "dist",
+    "styles",
+    "themes",
+    "README.md",
+    "LICENSE",
+    "docs"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "clean": "rimraf dist",
+    "dev": "tsup --watch"
+  },
+  "devDependencies": {
+    "tsup": "^8.2.4",
+    "typescript": "^5.5.4",
+    "rimraf": "^5.0.5"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com:Ahmed-Elrayes/dual-listbox.git"
+  }
+}
