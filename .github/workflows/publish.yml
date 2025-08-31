@@ -23,9 +23,21 @@ jobs:
       # Ensure npm 11.5.1 or later is installed
       - name: Update npm
         run: npm install -g npm@latest
-      - run: npm ci
-      - run: npm run build --if-present
-      - run: npm test
-      - run: npm publish
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: resources/js/dual-listbox
+
+      - name: Build package
+        run: npm run build
+        working-directory: resources/js/dual-listbox
+
+      - name: Run tests
+        run: npm test
+        working-directory: resources/js/dual-listbox
+
+      - name: Publish to npm
+        run: npm publish
+        working-directory: resources/js/dual-listbox
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
