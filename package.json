@@ -1,6 +1,6 @@
 {
   "name": "@elrayes/dual-listbox",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "type": "module",
   "description": "A zero-dependency (vanilla JS) dual list box with grouping, search, select-all, theming (Bootstrap/Tailwind), and TypeScript types.",
   "main": "./dist/index.cjs",
@@ -47,6 +47,6 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com:Ahmed-Elrayes/dual-listbox.git"
+    "url": "git+https://github.com/Ahmed-Elrayes/dual-listbox.git"
   }
 }
