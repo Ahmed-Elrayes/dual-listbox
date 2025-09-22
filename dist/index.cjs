@@ -421,6 +421,9 @@ var DualListBox = class {
     });
     return Array.from(map.values());
   }
+  getSettings() {
+    return this.settings;
+  }
 };
 function initDualListBox(selector, options = {}) {
   return new DualListBox(selector, options);

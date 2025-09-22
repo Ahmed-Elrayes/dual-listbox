@@ -1,5 +1,3 @@
-'use strict';
-
 // src/lib/themePresets.ts
 var defaultTheme = {
   container: "dual-listbox",
@@ -421,17 +419,15 @@ var DualListBox = class {
     });
     return Array.from(map.values());
   }
+  getSettings() {
+    return this.settings;
+  }
 };
 function initDualListBox(selector, options = {}) {
   return new DualListBox(selector, options);
 }
 DualListBox.setTheme = (theme) => useTheme(theme);
 
-exports.DualListBox = DualListBox;
-exports.bootstrapTheme = bootstrapTheme;
-exports.defaultTheme = defaultTheme;
-exports.initDualListBox = initDualListBox;
-exports.tailwindTheme = tailwindTheme;
-exports.useTheme = useTheme;
-//# sourceMappingURL=index.js.map
-//# sourceMappingURL=index.js.map
+export { DualListBox, bootstrapTheme, defaultTheme, initDualListBox, tailwindTheme, useTheme };
+//# sourceMappingURL=index.mjs.map
+//# sourceMappingURL=index.mjs.map
