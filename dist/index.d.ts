@@ -73,6 +73,9 @@ declare class DualListBox {
     getSelectedItems(): DualListBoxItem[];
     getUnselectedItems(): DualListBoxItem[];
     getAllItems(): DualListBoxItem[];
+    getSettings(): Required<DualListBoxOptions> & {
+        theme: DualListBoxTheme;
+    };
 }
 declare function initDualListBox(selector: string | Element, options?: DualListBoxOptions): DualListBox;
 

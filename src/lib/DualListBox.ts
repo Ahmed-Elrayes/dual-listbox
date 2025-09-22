@@ -424,6 +424,10 @@ export class DualListBox {
         });
         return Array.from(map.values());
     }
+
+    getSettings(): Required<DualListBoxOptions> & { theme: DualListBoxTheme } {
+        return this.settings;
+    }
 }
 
 export function initDualListBox(selector: string | Element, options: DualListBoxOptions = {}) {
