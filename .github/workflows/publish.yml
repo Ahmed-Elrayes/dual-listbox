@@ -32,7 +32,13 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Check if this version is already published
+        id: check_published
+        run: |
+          node -e "const v=require('./package.json').version; const {execSync}=require('node:child_process'); let arr=[]; try{arr=JSON.parse(execSync('npm view @elrayes/dual-listbox versions --json').toString())}catch(e){}; const exists=Array.isArray(arr)&&arr.includes(v); console.log('Package version:', v); console.log('Already on npm:', exists); require('fs').appendFileSync(process.env.GITHUB_OUTPUT, `exists=${exists}\n`);"
+
       - name: Publish to npm (with provenance)
+        if: steps.check_published.outputs.exists == 'false'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm publish --provenance --access public
