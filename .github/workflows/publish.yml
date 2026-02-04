@@ -6,13 +6,12 @@ on:
       - 'v*'
 
 permissions:
-  id-token: write
+  id-token: write    # required for OIDC provenance
   contents: read
 
 jobs:
   publish:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -23,7 +22,6 @@ jobs:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
 
-      # Remove deprecated config injected by setup-node
       - name: Remove deprecated npm config
         run: npm config delete always-auth || true
 
@@ -36,7 +34,10 @@ jobs:
       - name: Test
         run: npm test --if-present
 
-      - name: Publish to npm with OIDC provenance
+      - name: Publish to npm with OIDC
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish --access public --provenance
+        run: |
+          # Make sure version is bumped for every publish
+          npm version patch --no-git-tag-version
+          npm publish --access public --provenance
