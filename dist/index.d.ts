@@ -49,12 +49,15 @@ declare class DualListBox {
     private rootEl;
     private formEl;
     private instanceId;
+    private originalData;
     private defaults;
     private settings;
     private groups;
     private selectedGroups;
     constructor(element: Element | string, options?: DualListBoxOptions);
     private generateInstanceId;
+    private sortAllGroups;
+    private sortGroup;
     private buildGroups;
     private removeDuplicatesFromLeft;
     private render;
