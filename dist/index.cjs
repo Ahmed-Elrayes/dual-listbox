@@ -79,8 +79,10 @@ var DualListBox = class {
     const themeBase = mergeTheme(defaultTheme, GLOBAL_THEME);
     const theme = mergeTheme(themeBase, options.theme);
     this.settings = { ...this.defaults, ...options, theme };
+    this.originalData = [...this.settings.dataArray];
     this.groups = this.buildGroups(this.settings.dataArray);
     this.selectedGroups = this.buildGroups(this.settings.selectedItems);
+    this.sortAllGroups();
     this.removeDuplicatesFromLeft();
     this.render();
     this.bindEvents();
@@ -103,14 +105,32 @@ var DualListBox = class {
     }
     return id;
   }
+  sortAllGroups() {
+    [this.groups, this.selectedGroups].forEach((groupSet) => {
+      Object.keys(groupSet).forEach((groupName) => {
+        this.sortGroup(groupSet[groupName]);
+      });
+    });
+  }
+  sortGroup(group) {
+    group.sort((a, b) => {
+      const valA = String(a[this.settings.valueName]);
+      const valB = String(b[this.settings.valueName]);
+      const indexA = this.originalData.findIndex(
+        (item) => String(item[this.settings.valueName]) === valA
+      );
+      const indexB = this.originalData.findIndex(
+        (item) => String(item[this.settings.valueName]) === valB
+      );
+      return indexA - indexB;
+    });
+  }
   buildGroups(dataArray) {
     const groups = {};
     dataArray.forEach((item) => {
       const group = item[this.settings.groupName] || "Ungrouped";
       if (!groups[group]) groups[group] = [];
-      if (!groups[group].some((existing) => existing[this.settings.valueName] === item[this.settings.valueName])) {
-        groups[group].push(item);
-      }
+      groups[group].push(item);
     });
     return groups;
   }
@@ -119,7 +139,7 @@ var DualListBox = class {
       if (this.groups[group]) {
         this.selectedGroups[group].forEach((selectedItem) => {
           this.groups[group] = this.groups[group].filter(
-            (item) => item[this.settings.valueName] !== selectedItem[this.settings.valueName]
+            (item) => String(item[this.settings.valueName]) !== String(selectedItem[this.settings.valueName])
           );
         });
         if (this.settings.hideEmptyGroups) {
@@ -140,7 +160,7 @@ var DualListBox = class {
             <div class="${t.card}">
               <div class="${t.cardHeader}">${this.settings.tabNameText}</div>
               <div class="${t.cardBody}">
-                <input id="dual_listbox_${this.instanceId}_left_search" type="text" class="${t.searchInput}" data-side="left" placeholder="${this.settings.searchPlaceholderText}">
+                <input id="dual_listbox_${this.instanceId}_left_search" type="text" class="${t.searchInput} dual-listbox-search" data-side="left" placeholder="${this.settings.searchPlaceholderText}">
                 <div class="dual-listbox-content">
                   ${this.generateGroupedListHTML("left")}
                 </div>
@@ -152,14 +172,14 @@ var DualListBox = class {
             </div>
           </div>
           <div class="${t.colCenter}">
-            <button class="${t.btn} dual-listbox-include ${t.btnInclude}" disabled>${this.settings.includeButtonText}</button>
-            <button class="${t.btn} dual-listbox-exclude ${t.btnExclude}" disabled>${this.settings.excludeButtonText}</button>
+            <button type="button" class="${t.btn} dual-listbox-include ${t.btnInclude}" disabled>${this.settings.includeButtonText}</button>
+            <button type="button" class="${t.btn} dual-listbox-exclude ${t.btnExclude}" disabled>${this.settings.excludeButtonText}</button>
           </div>
           <div class="${t.colRight}" id="dual_listbox_${this.instanceId}_right_side">
             <div class="${t.card}">
               <div class="${t.cardHeader}">${this.settings.rightTabNameText}</div>
               <div class="${t.cardBody}">
-                <input id="dual_listbox_${this.instanceId}_right_search" type="text" class="${t.searchInput}" data-side="right" placeholder="${this.settings.searchPlaceholderText}">
+                <input id="dual_listbox_${this.instanceId}_right_search" type="text" class="${t.searchInput} dual-listbox-search" data-side="right" placeholder="${this.settings.searchPlaceholderText}">
                 <div class="dual-listbox-content">
                   ${this.generateGroupedListHTML("right")}
                 </div>
@@ -284,9 +304,10 @@ var DualListBox = class {
     const fromContainer = contents[fromSide === "left" ? 0 : 1];
     const selectedLis = Array.from(fromContainer.querySelectorAll(".item-select:checked")).map((inp) => inp.closest("li"));
     selectedLis.forEach((li) => {
-      var _a;
       const value = String(li.getAttribute("data-value"));
       const group = String(li.getAttribute("data-group"));
+      const originalItem = this.originalData.find((item) => String(item[this.settings.valueName]) === value);
+      if (!originalItem) return;
       if (fromGroups[group]) {
         fromGroups[group] = fromGroups[group].filter((i) => String(i[this.settings.valueName]) !== value);
         if (fromGroups[group].length === 0 && (this.settings.hideEmptyGroups || fromSide !== "left")) {
@@ -294,12 +315,10 @@ var DualListBox = class {
         }
       }
       if (!toGroups[group]) toGroups[group] = [];
-      const label = ((_a = li.querySelector("label")) == null ? void 0 : _a.textContent) || "";
-      toGroups[group].push({
-        [this.settings.itemName]: label,
-        [this.settings.valueName]: value,
-        [this.settings.groupName]: group
-      });
+      if (!toGroups[group].some((i) => String(i[this.settings.valueName]) === value)) {
+        toGroups[group].push(originalItem);
+      }
+      this.sortGroup(toGroups[group]);
     });
     this.render();
   }
@@ -347,10 +366,7 @@ var DualListBox = class {
       console.error("Parent form not found!");
       return;
     }
-    const selectedValues = [];
-    Object.values(this.selectedGroups).forEach((items) => {
-      items.forEach((item) => selectedValues.push(item[this.settings.valueName]));
-    });
+    const selectedValues = this.selectedArray;
     Array.from(this.formEl.querySelectorAll(`input[name="${this.settings.inputName}[]"]`)).forEach((el) => el.remove());
     selectedValues.forEach((value) => {
       const input = document.createElement("input");
@@ -362,26 +378,26 @@ var DualListBox = class {
   }
   getSelectedValues() {
     return new Promise((resolve) => {
-      const selectedValues = [];
-      Object.keys(this.selectedGroups).forEach((groupName) => {
-        this.selectedGroups[groupName].forEach((item) => {
-          selectedValues.push(item[this.settings.valueName]);
-        });
-      });
-      resolve(selectedValues);
+      resolve(this.selectedArray);
     });
   }
   get selected() {
     return this.selectedGroups;
   }
   get selectedArray() {
-    let selectedValues = [];
-    Object.keys(this.selectedGroups).forEach((groupName) => {
-      this.selectedGroups[groupName].forEach((item) => {
-        selectedValues.push(item[this.settings.valueName]);
-      });
+    const selectedValues = [];
+    this.originalData.forEach((item) => {
+      const val = item[this.settings.valueName];
+      const group = item[this.settings.groupName] || "Ungrouped";
+      if (this.selectedGroups[group]) {
+        const isSelected = this.selectedGroups[group].some(
+          (i) => String(i[this.settings.valueName]) === String(val)
+        );
+        if (isSelected) {
+          selectedValues.push(val);
+        }
+      }
     });
-    selectedValues = [...new Set(selectedValues)];
     return selectedValues;
   }
   get unselected() {
@@ -392,34 +408,27 @@ var DualListBox = class {
   }
   // New API methods: return arrays without duplicates
   getSelectedItems() {
-    const map = /* @__PURE__ */ new Map();
-    Object.values(this.selectedGroups).forEach((items) => {
-      items.forEach((item) => {
-        const key = String(item[this.settings.valueName]);
-        if (!map.has(key)) map.set(key, item);
-      });
+    const selected = [];
+    const values = this.selectedArray.map(String);
+    this.originalData.forEach((item) => {
+      if (values.includes(String(item[this.settings.valueName]))) {
+        selected.push(item);
+      }
     });
-    return Array.from(map.values());
+    return selected;
   }
   getUnselectedItems() {
-    const map = /* @__PURE__ */ new Map();
-    Object.values(this.groups).forEach((items) => {
-      items.forEach((item) => {
-        const key = String(item[this.settings.valueName]);
-        if (!map.has(key)) map.set(key, item);
-      });
+    const unselected = [];
+    const selectedValues = this.selectedArray.map(String);
+    this.originalData.forEach((item) => {
+      if (!selectedValues.includes(String(item[this.settings.valueName]))) {
+        unselected.push(item);
+      }
     });
-    return Array.from(map.values());
+    return unselected;
   }
   getAllItems() {
-    const map = /* @__PURE__ */ new Map();
-    Object.values(this.groups).forEach((items) => {
-      items.forEach((item) => map.set(String(item[this.settings.valueName]), item));
-    });
-    Object.values(this.selectedGroups).forEach((items) => {
-      items.forEach((item) => map.set(String(item[this.settings.valueName]), item));
-    });
-    return Array.from(map.values());
+    return [...this.originalData];
   }
   getSettings() {
     return this.settings;
