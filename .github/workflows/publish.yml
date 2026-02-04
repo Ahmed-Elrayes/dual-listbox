@@ -6,7 +6,7 @@ on:
       - 'v*'
 
 permissions:
-  id-token: write  # Required for OIDC (npm provenance)
+  id-token: write
   contents: read
 
 jobs:
@@ -32,7 +32,5 @@ jobs:
       - name: Run tests
         run: npm test
 
-      - name: Publish to npm (with provenance)
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish to npm (OIDC)
         run: npm publish --provenance --access public
