@@ -12,16 +12,20 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Use latest npm
-        run: npm install -g npm@latest
+      # Remove deprecated config injected by setup-node
+      - name: Remove deprecated npm config
+        run: npm config delete always-auth
 
       - name: Install dependencies
         run: npm ci
@@ -32,5 +36,7 @@ jobs:
       - name: Run tests
         run: npm test
 
-      - name: Publish to npm (OIDC)
+      - name: Publish to npm (with provenance)
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm publish --provenance --access public
