@@ -17,13 +17,13 @@ jobs:
         with:
           fetch-depth: 0  # full history needed for the prod-ancestor check below
 
-      # Releases must be merged into 'prod' first (master -> PR -> prod -> tag).
-      # This blocks a publish if someone tags a commit that isn't on prod yet.
-      - name: Verify tag was released from prod
+      # Releases must be merged into 'production' first (master -> PR -> production -> tag).
+      # This blocks a publish if someone tags a commit that isn't on production yet.
+      - name: Verify tag was released from production
         run: |
-          git fetch origin prod
-          if ! git merge-base --is-ancestor "${{ github.sha }}" origin/prod; then
-            echo "::error::Tag ${{ github.ref_name }} (${{ github.sha }}) is not on 'prod'. Merge master into prod via PR before tagging a release."
+          git fetch origin production
+          if ! git merge-base --is-ancestor "${{ github.sha }}" origin/production; then
+            echo "::error::Tag ${{ github.ref_name }} (${{ github.sha }}) is not on 'production'. Merge master into production via PR before tagging a release."
             exit 1
           fi
 
