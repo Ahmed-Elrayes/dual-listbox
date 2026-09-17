@@ -1,6 +1,6 @@
 # @elrayes/dual-listbox
 
-A zero-dependency (vanilla JS) dual-list box with grouping, search, select-all, and theming (Bootstrap 5.2 default, Tailwind optional) with TypeScript types.
+A zero-dependency (vanilla JS) dual-list box with grouping, search, select-all (with indeterminate state), and theming (Bootstrap 5.2 default, Tailwind optional), with TypeScript types.
 
 ## Installation
 
@@ -8,16 +8,15 @@ A zero-dependency (vanilla JS) dual-list box with grouping, search, select-all, 
 npm install @elrayes/dual-listbox
 ```
 
-
 ## Usage (ES Modules)
 
 ```ts
-import { DualListBox, useTheme, tailwindTheme} from '@elrayes/dual-listbox';
-import { tailwindTheme } from '@elrayes/dual-listbox';
-useTheme(tailwindTheme); // sets global default for all new instances 
-DualListBox.setTheme(tailwindTheme); // alias for useTheme()
+import { DualListBox, useTheme, tailwindTheme } from '@elrayes/dual-listbox';
 import '@elrayes/dual-listbox/styles/core.css';
-import '@elrayes/dual-listbox/themes/bootstrap.css'; // or tailwind.css
+import '@elrayes/dual-listbox/themes/bootstrap.css'; // or themes/tailwind.css
+
+useTheme(tailwindTheme); // sets the global default theme for all new instances
+// DualListBox.setTheme(tailwindTheme); // back-compat alias for useTheme()
 
 const items = [
   { item: 'Apple', value: 1, group: 'Fruits' },
@@ -32,7 +31,6 @@ const dlb = new DualListBox('#dual-listbox-container', {
   },
 });
 
-// New methods (no duplicates)
 const selectedItems = dlb.getSelectedItems();
 const unselectedItems = dlb.getUnselectedItems();
 const allItems = dlb.getAllItems();
@@ -52,53 +50,92 @@ const dlb = new DualListBox('#dual-listbox-container', { /* options */ });
 
 ```ts
 export interface DualListBoxOptions {
-  itemName?: string; // default "item"
-  groupName?: string; // default "group"
-  valueName?: string; // default "value"
-  inputName?: string; // form input name for hidden fields
-  tabNameText?: string;
-  rightTabNameText?: string;
-  searchPlaceholderText?: string;
-  includeButtonText?: string;
-  excludeButtonText?: string;
-  dataArray?: any[];
-  selectedItems?: any[];
-  hideEmptyGroups?: boolean;
-  submitForm?: boolean;
+  itemName?: string;              // property holding an item's label, default "item"
+  groupName?: string;             // property holding an item's group, default "group"
+  valueName?: string;             // property holding an item's unique value, default "value"
+  inputName?: string;             // hidden-input name for form submission, default "selectedItems"
+  tabNameText?: string;           // left pane header, default "Available Items"
+  rightTabNameText?: string;      // right pane header, default "Selected Items"
+  searchPlaceholderText?: string; // default "Search..."
+  includeButtonText?: string;     // default "Include >>"
+  excludeButtonText?: string;     // default "<< Exclude"
+  dataArray?: any[];              // all available items
+  selectedItems?: any[];          // items preselected into the right pane (subset of dataArray)
+  hideEmptyGroups?: boolean;      // default false
+  submitForm?: boolean;           // append hidden inputs on submit, default true (ignored if onSubmit is set)
   onSubmit?: (selected, unselected, allItems, selectedArray) => void | null;
   theme?: Partial<DualListBoxTheme>;
 }
 ```
 
+`dataArray` items can carry any extra properties beyond `item`/`group`/`value` (e.g. an `id`, `description`, or `metadata` field) — they pass through untouched and are returned as-is from `getSelectedItems()`/`getUnselectedItems()`/`getAllItems()`.
+
+## Select-all and indeterminate state
+
+Both the per-group checkbox and each pane's "Select All" checkbox reflect the
+real state of their descendants, not just checked/unchecked:
+
+- **Unchecked** — none of the covered items are selected.
+- **Checked** — all of the covered items are selected.
+- **Indeterminate** (the native `input.indeterminate` DOM property, rendered
+  as a dash `▬` by the browser) — *some but not all* covered items are
+  selected.
+
+This updates live as items are checked, moved between panes, or filtered by
+search — no configuration needed.
+
 ## Theming
 
-- Built-in theme maps classes to your CSS framework.
-- Presets: Bootstrap 5.2 (defaultTheme) and Tailwind (tailwindTheme).
-- You can set a global default for all new instances using `useTheme`:
+- Built-in theme maps every part of the widget (container, card, buttons, checkboxes, …) to a CSS class string.
+- Presets: Bootstrap 5.2 (`defaultTheme`, aliased as `bootstrapTheme`) and Tailwind (`tailwindTheme`, with `dark:` variants).
+- Theme resolution order per instance: `options.theme` (partial overrides) > global theme set via `useTheme()` > `defaultTheme`.
+
+### Global (shared) theme state
+
+`useTheme()` sets **module-level shared state** — every `DualListBox` constructed *after* the call picks it up automatically, without passing `theme` to each instance:
 
 ```ts
 import { DualListBox, useTheme } from '@elrayes/dual-listbox';
-import { tailwindTheme } from '@elrayes/dual-listbox/dist/themePresets';
+import { tailwindTheme } from '@elrayes/dual-listbox';
 
-useTheme(tailwindTheme); // applies to all new DualListBox instances
+useTheme(tailwindTheme); // shared across every instance created from here on
 
-new DualListBox('#el'); // uses the global Tailwind theme
+new DualListBox('#el-1'); // uses the Tailwind theme
+new DualListBox('#el-2'); // also uses the Tailwind theme
 ```
 
-- Or provide a custom theme per instance (an instance option has priority over global):
+Things worth knowing about this shared state:
+
+- **It only affects instances created after the call.** Instances already rendered keep the theme they were built with — `useTheme()` does not retroactively re-theme them.
+- **It's per module instance, not a page-wide global.** If your bundler ever ships two separate copies of this package (e.g. two independently-chunked entry points that don't share a module graph), each copy has its own `GLOBAL_THEME` — a `useTheme()` call in one is invisible to the other. This is rare in a typical single-bundle app/Vite build.
+- **Per-instance `theme` always wins**, regardless of what `useTheme()` set:
 
 ```ts
 new DualListBox('#el', {
   theme: {
-    // override any class strings
-    btn: 'my-btn my-btn--primary',
-  }
+    btn: 'my-btn my-btn--primary', // overrides just this class, for this instance
+  },
 });
 ```
 
-Note: For backward compatibility, `DualListBox.setTheme(tailwindTheme)` is still available and is an alias to `useTheme(tailwindTheme)`.
+- `DualListBox.setTheme(theme)` is kept as a back-compat alias for `useTheme(theme)`.
 
-Alternatively, rely on CSS variables and write a stylesheet that targets `.dual-listbox`.
+Alternatively, skip the theme system entirely and target `.dual-listbox` with your own stylesheet.
+
+## Multiple instances on one page
+
+Every instance gets its own random `instanceId`, and every element `id`/`for`
+pair it renders (container, search inputs, group checkboxes, item checkboxes)
+is namespaced with that ID. You can safely mount several `DualListBox`
+instances on the same page — including with identical `dataArray` — without
+`id` collisions breaking label-to-checkbox association.
+
+## Security
+
+Item labels, group names, and values are HTML-escaped before being inserted
+into the DOM. `dataArray`/`selectedItems` can safely contain user-generated
+content (e.g. names loaded from a database) without risking markup/script
+injection into the page.
 
 ## Laravel + Vite Integration
 
@@ -109,18 +146,29 @@ Alternatively, rely on CSS variables and write a stylesheet that targets `.dual-
 ```
 
 2. Import and initialize in your app JS that Vite builds.
-
-3. Include core.css and choose a theme stylesheet.
+3. Include `core.css` and choose a theme stylesheet.
 
 ## API
 
 - `new DualListBox(element, options)`
 - `getSelectedValues(): Promise<(string|number)[]>` (legacy values API)
 - Getters: `selected`, `unselected`, `allItems`, `selectedArray`
-- New methods (return item objects without duplicates):
-  - `getSelectedItems()`
-  - `getUnselectedItems()`
-  - `getAllItems()`
+- Flat, de-duplicated item arrays:
+  - `getSelectedItems(): DualListBoxItem[]`
+  - `getUnselectedItems(): DualListBoxItem[]`
+  - `getAllItems(): DualListBoxItem[]`
+- `getSettings()` — the fully-resolved settings (defaults + options + merged theme) for this instance.
+- `useTheme(theme)` / `DualListBox.setTheme(theme)` — set the shared global theme (see [Global (shared) theme state](#global-shared-theme-state)).
+
+## Testing
+
+```bash
+npm test        # run once
+npm run test:watch
+npm run coverage
+```
+
+Tests cover: button enable/disable, form submission (`onSubmit` and hidden-input fallback), `hideEmptyGroups`, search filtering, global theming, select-all/group-checkbox indeterminate state, multi-instance ID isolation, and HTML escaping of user-supplied data.
 
 ## License
 MIT
