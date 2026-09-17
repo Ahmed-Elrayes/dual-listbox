@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # full history needed for the prod-ancestor check below
+          fetch-depth: 0  # full history needed for the production-ancestor check below
 
       # Releases must be merged into 'production' first (master -> PR -> production -> tag).
       # This blocks a publish if someone tags a commit that isn't on production yet.
