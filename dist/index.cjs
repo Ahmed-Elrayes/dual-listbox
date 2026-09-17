@@ -23,27 +23,27 @@ var defaultTheme = {
 };
 var bootstrapTheme = { ...defaultTheme };
 var tailwindTheme = {
-  container: "dual-listbox tw",
-  row: "grid grid-cols-1 md:grid-cols-5 gap-3",
+  container: "dual-listbox",
+  row: "grid grid-cols-1 gap-3 md:grid-cols-5",
   colLeft: "md:col-span-2",
-  colCenter: "md:col-span-1 flex flex-col justify-center gap-3",
+  colCenter: "flex flex-col justify-center gap-2 md:col-span-1",
   colRight: "md:col-span-2",
-  card: "h-full border rounded shadow-sm bg-white",
-  cardHeader: "px-4 py-2 border-b font-medium",
-  cardBody: "p-4",
-  cardFooter: "px-4 py-2 border-t text-center",
-  searchInput: "w-full mb-3 border rounded px-3 py-2 dual-listbox-search",
+  card: "flex h-full flex-col rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800",
+  cardHeader: "border-b border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 dark:border-slate-700 dark:text-slate-200",
+  cardBody: "flex-1 p-3",
+  cardFooter: "border-t border-slate-200 px-4 py-2 text-center text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400",
+  searchInput: "dual-listbox-search mb-3 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-slate-600 dark:bg-slate-900 dark:text-white",
   listGroup: "space-y-1",
-  listItem: "py-1",
+  listItem: "rounded-md px-2 py-1 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700",
   formCheck: "flex items-center gap-2",
-  formCheckInput: "h-4 w-4",
+  formCheckInput: "h-4 w-4 rounded text-primary-600 focus:ring-primary-500",
   formCheckLabel: "",
-  btn: "w-full border rounded px-3 py-2 bg-gray-100 hover:bg-gray-200",
+  btn: "btn-outline w-full",
   btnInclude: "mb-2",
   btnExclude: ""
 };
 
-// src/lib/DualListBox.ts
+// src/lib/theme.ts
 function mergeTheme(base, override) {
   return { ...base, ...override || {} };
 }
@@ -51,7 +51,22 @@ var GLOBAL_THEME = { ...defaultTheme };
 function useTheme(theme) {
   GLOBAL_THEME = mergeTheme(defaultTheme, theme);
 }
+function getGlobalTheme() {
+  return GLOBAL_THEME;
+}
+
+// src/lib/html.ts
+function escapeHtml(value) {
+  return String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+// src/lib/DualListBox.ts
 var DualListBox = class {
+  /**
+   * @param element CSS selector or root element to render into.
+   * @param options Data, labels, behavior flags, and theme overrides — see {@link DualListBoxOptions}.
+   * @throws {Error} If `element` is a selector that matches nothing.
+   */
   constructor(element, options = {}) {
     this.groups = {};
     this.selectedGroups = {};
@@ -76,8 +91,7 @@ var DualListBox = class {
       onSubmit: null,
       theme: defaultTheme
     };
-    const themeBase = mergeTheme(defaultTheme, GLOBAL_THEME);
-    const theme = mergeTheme(themeBase, options.theme);
+    const theme = mergeTheme(getGlobalTheme(), options.theme);
     this.settings = { ...this.defaults, ...options, theme };
     this.originalData = [...this.settings.dataArray];
     this.groups = this.buildGroups(this.settings.dataArray);
@@ -97,6 +111,7 @@ var DualListBox = class {
       });
     }
   }
+  /** Random ID namespacing this instance's element/checkbox `id`s so multiple instances can coexist on one page. */
   generateInstanceId() {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     let id = "";
@@ -105,6 +120,7 @@ var DualListBox = class {
     }
     return id;
   }
+  /** Sorts every group in both panes to match `originalData` order. */
   sortAllGroups() {
     [this.groups, this.selectedGroups].forEach((groupSet) => {
       Object.keys(groupSet).forEach((groupName) => {
@@ -112,6 +128,7 @@ var DualListBox = class {
       });
     });
   }
+  /** Sorts one group's items in place to match their position in `originalData`. */
   sortGroup(group) {
     group.sort((a, b) => {
       const valA = String(a[this.settings.valueName]);
@@ -125,6 +142,7 @@ var DualListBox = class {
       return indexA - indexB;
     });
   }
+  /** Buckets a flat item array into `{ groupName: items[] }`, defaulting ungrouped items to `"Ungrouped"`. */
   buildGroups(dataArray) {
     const groups = {};
     dataArray.forEach((item) => {
@@ -134,6 +152,7 @@ var DualListBox = class {
     });
     return groups;
   }
+  /** Removes items from the "available" pane already present in `selectedItems`, so they don't render twice. */
   removeDuplicatesFromLeft() {
     Object.keys(this.selectedGroups).forEach((group) => {
       if (this.groups[group]) {
@@ -149,8 +168,8 @@ var DualListBox = class {
         }
       }
     });
-    this.render();
   }
+  /** Renders the full widget markup and refreshes select-all/indeterminate states. */
   render() {
     const t = this.settings.theme;
     const template = `
@@ -158,9 +177,9 @@ var DualListBox = class {
         <div class="${t.row}">
           <div class="${t.colLeft}" id="dual_listbox_${this.instanceId}_left_side">
             <div class="${t.card}">
-              <div class="${t.cardHeader}">${this.settings.tabNameText}</div>
+              <div class="${t.cardHeader}">${escapeHtml(this.settings.tabNameText)}</div>
               <div class="${t.cardBody}">
-                <input id="dual_listbox_${this.instanceId}_left_search" type="text" class="${t.searchInput} dual-listbox-search" data-side="left" placeholder="${this.settings.searchPlaceholderText}">
+                <input id="dual_listbox_${this.instanceId}_left_search" type="text" class="${t.searchInput} dual-listbox-search" data-side="left" placeholder="${escapeHtml(this.settings.searchPlaceholderText)}">
                 <div class="dual-listbox-content">
                   ${this.generateGroupedListHTML("left")}
                 </div>
@@ -172,14 +191,14 @@ var DualListBox = class {
             </div>
           </div>
           <div class="${t.colCenter}">
-            <button type="button" class="${t.btn} dual-listbox-include ${t.btnInclude}" disabled>${this.settings.includeButtonText}</button>
-            <button type="button" class="${t.btn} dual-listbox-exclude ${t.btnExclude}" disabled>${this.settings.excludeButtonText}</button>
+            <button type="button" class="${t.btn} dual-listbox-include ${t.btnInclude}" disabled>${escapeHtml(this.settings.includeButtonText)}</button>
+            <button type="button" class="${t.btn} dual-listbox-exclude ${t.btnExclude}" disabled>${escapeHtml(this.settings.excludeButtonText)}</button>
           </div>
           <div class="${t.colRight}" id="dual_listbox_${this.instanceId}_right_side">
             <div class="${t.card}">
-              <div class="${t.cardHeader}">${this.settings.rightTabNameText}</div>
+              <div class="${t.cardHeader}">${escapeHtml(this.settings.rightTabNameText)}</div>
               <div class="${t.cardBody}">
-                <input id="dual_listbox_${this.instanceId}_right_search" type="text" class="${t.searchInput} dual-listbox-search" data-side="right" placeholder="${this.settings.searchPlaceholderText}">
+                <input id="dual_listbox_${this.instanceId}_right_search" type="text" class="${t.searchInput} dual-listbox-search" data-side="right" placeholder="${escapeHtml(this.settings.searchPlaceholderText)}">
                 <div class="dual-listbox-content">
                   ${this.generateGroupedListHTML("right")}
                 </div>
@@ -196,6 +215,7 @@ var DualListBox = class {
     this.updateSelectAllInfo("left");
     this.updateSelectAllInfo("right");
   }
+  /** Builds one pane's grouped `<ul>` markup; `id`/`for` are namespaced with `instanceId` and values are HTML-escaped. */
   generateGroupedListHTML(side) {
     const t = this.settings.theme;
     const groups = side === "left" ? this.groups : this.selectedGroups;
@@ -205,14 +225,14 @@ var DualListBox = class {
       const items = groups[groupName];
       const totalItems = items.length;
       const isGroupEmpty = totalItems === 0;
-      const groupSelectAllInput = `group_${groupName}_${side}`;
+      const groupIdBase = `dual_listbox_${this.instanceId}_group_${escapeHtml(groupName)}_${side}`;
       const isLast = index === keys.length - 1;
       html += `
         <div class="dual-listbox-group${!isLast ? " mb-3" : ""}">
           <div class="group-header mb-2">
             <div class="${t.formCheck}">
-              <input id="${groupSelectAllInput}" type="checkbox" class="${t.formCheckInput} group-select-all" ${isGroupEmpty ? "checked disabled" : ""}>
-              <label for="${groupSelectAllInput}" class="${t.formCheckLabel}">${groupName}</label>
+              <input id="${groupIdBase}" type="checkbox" class="${t.formCheckInput} group-select-all" ${isGroupEmpty ? "checked disabled" : ""}>
+              <label for="${groupIdBase}" class="${t.formCheckLabel}">${escapeHtml(groupName)}</label>
             </div>
           </div>`;
       if (!isGroupEmpty) {
@@ -220,11 +240,12 @@ var DualListBox = class {
         items.forEach((item) => {
           const val = item[this.settings.valueName];
           const name = item[this.settings.itemName];
+          const itemId = `dual_listbox_${this.instanceId}_item_${escapeHtml(groupName)}_${escapeHtml(val)}_${side}`;
           html += `
-            <li class="${t.listItem}" data-value="${val}" data-group="${groupName}">
+            <li class="${t.listItem}" data-value="${escapeHtml(val)}" data-group="${escapeHtml(groupName)}">
               <div class="${t.formCheck}">
-                <input id="${groupName}_${val}" type="checkbox" class="${t.formCheckInput} item-select" />
-                <label for="${groupName}_${val}" class="${t.formCheckLabel}">${name}</label>
+                <input id="${itemId}" type="checkbox" class="${t.formCheckInput} item-select" />
+                <label for="${itemId}" class="${t.formCheckLabel}">${escapeHtml(name)}</label>
               </div>
             </li>`;
         });
@@ -234,6 +255,13 @@ var DualListBox = class {
     });
     return html;
   }
+  /**
+   * Refreshes one pane's select-all checkbox (checked/indeterminate/disabled),
+   * its "selected/total" counter, each group's own select-all checkbox, and
+   * the include/exclude button disabled states.
+   *
+   * @param side Which pane to refresh.
+   */
   updateSelectAllInfo(side) {
     const idx = side === "left" ? 0 : 1;
     const contents = this.rootEl.querySelectorAll(".dual-listbox-content");
@@ -249,11 +277,14 @@ var DualListBox = class {
       if (totalItems === 0) {
         selectAll.disabled = true;
         selectAll.checked = true;
+        selectAll.indeterminate = false;
       } else {
         selectAll.disabled = false;
         selectAll.checked = selectedItems === totalItems;
+        selectAll.indeterminate = selectedItems > 0 && selectedItems < totalItems;
       }
     }
+    this.updateGroupCheckboxStates(content);
     const includeBtn = this.rootEl.querySelector(".dual-listbox-include");
     const excludeBtn = this.rootEl.querySelector(".dual-listbox-exclude");
     const leftContent = contents[0];
@@ -263,6 +294,18 @@ var DualListBox = class {
     if (includeBtn) includeBtn.disabled = leftChecked === 0;
     if (excludeBtn) excludeBtn.disabled = rightChecked === 0;
   }
+  /** Sets each group's select-all checkbox to checked/indeterminate/unchecked based on its `.item-select` children. */
+  updateGroupCheckboxStates(content) {
+    content == null ? void 0 : content.querySelectorAll(".dual-listbox-group").forEach((groupEl) => {
+      const groupCheckbox = groupEl.querySelector(".group-select-all");
+      if (!groupCheckbox || groupCheckbox.disabled) return;
+      const total = groupEl.querySelectorAll(".item-select").length;
+      const checkedCount = groupEl.querySelectorAll(".item-select:checked").length;
+      groupCheckbox.checked = total > 0 && checkedCount === total;
+      groupCheckbox.indeterminate = checkedCount > 0 && checkedCount < total;
+    });
+  }
+  /** Wires up click/change/input delegation once for the widget's lifetime. */
   bindEvents() {
     this.rootEl.addEventListener("click", (e) => {
       const target = e.target;
@@ -297,6 +340,7 @@ var DualListBox = class {
       }
     });
   }
+  /** Moves every checked item from one pane's data model to the other and re-renders; de-dupes and keeps groups sorted. */
   moveItems(fromSide, toSide) {
     const fromGroups = fromSide === "left" ? this.groups : this.selectedGroups;
     const toGroups = toSide === "left" ? this.groups : this.selectedGroups;
@@ -322,6 +366,7 @@ var DualListBox = class {
     });
     this.render();
   }
+  /** Checks or unchecks every group and item checkbox in one pane. */
   toggleSelectAll(side, isChecked) {
     const contents = this.rootEl.querySelectorAll(".dual-listbox-content");
     const content = contents[side === "left" ? 0 : 1];
@@ -329,6 +374,7 @@ var DualListBox = class {
     content == null ? void 0 : content.querySelectorAll(".item-select").forEach((inp) => inp.checked = isChecked);
     this.updateSelectAllInfo(side);
   }
+  /** Filters one pane's visible groups/items by a case-insensitive substring match on group/item label text. */
   searchItems(side, searchTerm) {
     const contents = this.rootEl.querySelectorAll(".dual-listbox-content");
     const container = contents[side === "left" ? 0 : 1];
@@ -361,6 +407,7 @@ var DualListBox = class {
       container == null ? void 0 : container.querySelectorAll("li").forEach((li) => li.style.display = "");
     }
   }
+  /** Replaces any previously appended hidden inputs with one `<input type="hidden" name="{inputName}[]">` per selected value. */
   appendSelectedGroupsOnSubmit() {
     if (!this.formEl) {
       console.error("Parent form not found!");
@@ -376,14 +423,17 @@ var DualListBox = class {
       this.formEl.appendChild(input);
     });
   }
+  /** @returns The selected items' values, kept for backward compatibility with the original callback-era API. */
   getSelectedValues() {
     return new Promise((resolve) => {
       resolve(this.selectedArray);
     });
   }
+  /** Selected items grouped by group name. */
   get selected() {
     return this.selectedGroups;
   }
+  /** Selected items' values (`settings.valueName`), in `dataArray` order. */
   get selectedArray() {
     const selectedValues = [];
     this.originalData.forEach((item) => {
@@ -400,13 +450,15 @@ var DualListBox = class {
     });
     return selectedValues;
   }
+  /** Unselected ("available") items grouped by group name. */
   get unselected() {
     return this.groups;
   }
+  /** The full, original `dataArray` passed in via options. */
   get allItems() {
     return this.settings.dataArray;
   }
-  // New API methods: return arrays without duplicates
+  /** @returns Selected items as a flat, de-duplicated array of the original item objects. */
   getSelectedItems() {
     const selected = [];
     const values = this.selectedArray.map(String);
@@ -417,6 +469,7 @@ var DualListBox = class {
     });
     return selected;
   }
+  /** @returns Unselected items as a flat, de-duplicated array of the original item objects. */
   getUnselectedItems() {
     const unselected = [];
     const selectedValues = this.selectedArray.map(String);
@@ -427,9 +480,11 @@ var DualListBox = class {
     });
     return unselected;
   }
+  /** @returns A shallow copy of every item originally passed in via `dataArray`. */
   getAllItems() {
     return [...this.originalData];
   }
+  /** @returns The fully-resolved settings (defaults + options + merged theme) for this instance. */
   getSettings() {
     return this.settings;
   }
